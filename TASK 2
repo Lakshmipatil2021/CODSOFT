@@ -1,0 +1,73 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Scanner;
+
+public class CurrencyConverter {
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Welcome to Currency Converter!");
+
+        // Obtain your API key from ExchangeRate-API and replace "YOUR_API_KEY" with it
+        String apiKey = "YOUR_API_KEY";
+        String baseURL = "https://open.er-api.com/v6/latest/";
+
+        System.out.print("Enter the base currency code (e.g., USD): ");
+        String baseCurrency = scanner.nextLine().toUpperCase();
+
+        System.out.print("Enter the target currency code (e.g., EUR): ");
+        String targetCurrency = scanner.nextLine().toUpperCase();
+
+        System.out.print("Enter the amount to convert: ");
+        double amountToConvert = scanner.nextDouble();
+
+        try {
+            String apiUrl = baseURL + baseCurrency;
+            String jsonResponse = getExchangeRates(apiUrl);
+
+            // Parse the JSON response to get the exchange rate
+            double exchangeRate = parseExchangeRate(jsonResponse, targetCurrency);
+
+            // Perform the conversion
+            double convertedAmount = amountToConvert * exchangeRate;
+
+            System.out.println(amountToConvert + " " + baseCurrency + " is equal to " +
+                    convertedAmount + " " + targetCurrency);
+        } catch (IOException e) {
+            System.err.println("Error fetching exchange rates: " + e.getMessage());
+        }
+    }
+
+    private static String getExchangeRates(String apiUrl) throws IOException {
+        URL url = new URL(apiUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+            StringBuilder response = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+
+            return response.toString();
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private static double parseExchangeRate(String jsonResponse, String targetCurrency) {
+        // Parse the JSON response and extract the exchange rate for the target currency
+        // You may want to use a JSON parsing library for more complex scenarios
+        String rateKey = "\"" + targetCurrency + "\":";
+        int rateIndex = jsonResponse.indexOf(rateKey) + rateKey.length();
+        int endIndex = jsonResponse.indexOf(",", rateIndex);
+        String rateString = jsonResponse.substring(rateIndex, endIndex).trim();
+
+        return Double.parseDouble(rateString);
+    }
+}
